@@ -1,13 +1,7 @@
-"""
-02 — Exploratory Data Analysis
-===============================
-Data quality checks, distributions, and segment-level breakdowns
-prior to hypothesis testing.
-"""
+"""Exploratory Data Analysis"""
 
 import sys, os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -18,22 +12,21 @@ sns.set_theme(style='whitegrid', palette='muted', font_scale=1.1)
 FIGDIR = os.path.join(os.path.dirname(__file__), '..', 'assets')
 os.makedirs(FIGDIR, exist_ok=True)
 
-# ── Load & validate ───────────────────────────────────────────────
+# Load
 df = load_ab_data(os.path.join(os.path.dirname(__file__), '..', 'data', 'ab_test_data.csv'))
 checks = validate_data(df)
-print("=== Data Quality Checks ===")
 for k, v in checks.items():
     print(f"  {k}: {v}")
 
 df = add_derived_features(df)
 
-# ── Group balance ─────────────────────────────────────────────────
-print("\n=== Group Sizes ===")
+# Group Balance
+print("\n Group Sizes")
 print(df['group'].value_counts())
 print(f"\nSRM p-value: {checks['srm_p_value']}",
-      "⚠ FLAGGED" if checks['srm_flag'] else "✓ No issue")
+      "⚠ FLAGGED" if checks['srm_flag'] else "No issue")
 
-# ── Daily traffic & conversion ────────────────────────────────────
+# traffic and  conversion by day
 daily = (df.groupby(['date', 'group'])
          .agg(sessions=('user_id', 'count'),
               conversions=('converted', 'sum'),
@@ -58,9 +51,9 @@ plt.xticks(rotation=45)
 plt.tight_layout()
 plt.savefig(os.path.join(FIGDIR, 'daily_traffic_cvr.png'), dpi=150, bbox_inches='tight')
 plt.close()
-print("\n✓ Saved daily_traffic_cvr.png")
+print("Saved daily_traffic_cvr.png")
 
-# ── Device breakdown ──────────────────────────────────────────────
+# By device
 device_stats = (df.groupby(['group', 'device'])
                 .agg(n=('user_id', 'count'), conversions=('converted', 'sum'))
                 .reset_index())
@@ -82,9 +75,9 @@ ax.legend()
 plt.tight_layout()
 plt.savefig(os.path.join(FIGDIR, 'cvr_by_device.png'), dpi=150, bbox_inches='tight')
 plt.close()
-print("✓ Saved cvr_by_device.png")
+print("Saved cvr_by_device.png")
 
-# ── Revenue distribution (converters only) ────────────────────────
+# Revenue distribution only converters
 converters = df[df.converted == 1]
 
 fig, ax = plt.subplots(figsize=(8, 5))
@@ -98,17 +91,17 @@ ax.legend()
 plt.tight_layout()
 plt.savefig(os.path.join(FIGDIR, 'revenue_distribution.png'), dpi=150, bbox_inches='tight')
 plt.close()
-print("✓ Saved revenue_distribution.png")
+print("Saved revenue_distribution.png")
 
-# ── Traffic source mix (check for balance) ────────────────────────
+#Traffic source mix─
 source_mix = (df.groupby(['group', 'traffic_source'])
               .size().unstack(fill_value=0))
 source_pct = source_mix.div(source_mix.sum(axis=1), axis=0) * 100
-print("\n=== Traffic Source Mix (%) ===")
+print("\nTraffic Source Mix (%)")
 print(source_pct.round(2))
 
-# ── Session-level metrics ─────────────────────────────────────────
-print("\n=== Session Metrics by Group ===")
+# Sessions by group
+print("\nSession Metrics by Group")
 summary = (df.groupby('group')
            .agg(
                sessions=('user_id', 'count'),
@@ -120,7 +113,7 @@ summary = (df.groupby('group')
 summary['rev_per_session'] = summary['total_revenue'] / summary['sessions']
 print(summary.round(4))
 
-# ── Novelty check: first-week vs last-week CVR ───────────────────
+# CVR check first vs last 
 df['week'] = pd.to_datetime(df['date']).dt.isocalendar().week.astype(int)
 weeks = sorted(df['week'].unique())
 first_week, last_week = weeks[0], weeks[-1]
@@ -130,7 +123,7 @@ novelty = (df[df.week.isin([first_week, last_week])]
            .agg(n=('user_id', 'count'), conv=('converted', 'sum'))
            .reset_index())
 novelty['cvr'] = novelty['conv'] / novelty['n']
-print("\n=== Novelty Check: Week-1 vs Week-3 CVR ===")
+print("\ Novelty Check: Week 1 vs Week 3 CVR")
 print(novelty[['group', 'week', 'n', 'cvr']].to_string(index=False))
 
-print("\nEDA complete — see assets/ for plots.")
+print("\nEDA complete.  See assets/ for plots.")
