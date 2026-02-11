@@ -1,6 +1,6 @@
 # A/B Test: E-Commerce Checkout Redesign
 
-End-to-end A/B testing project — from experiment design through statistical analysis to a ship/no-ship business recommendation.
+End to end A/B testing project, from experiment design through statistical analysis to a ship/no-ship business recommendation.
 
 ![Cumulative CVR](assets/cumulative_cvr.png)
 
@@ -8,20 +8,25 @@ End-to-end A/B testing project — from experiment design through statistical an
 
 ## Business Context
 
-A mid-size e-commerce retailer (~3,600 sessions/day) tested a **single-page checkout** against its legacy multi-step checkout flow. The hypothesis: reducing friction in the purchase funnel would increase the checkout conversion rate without degrading average order value.
+A mid-size e-commerce retailer (~3,600 sessions/day) tested a **one page checkout** against its old multi-step checkout process. The hypothesis: reducing friction in the purchase funnel would increase the checkout conversion rate without lowering the average order value.
 
 ### Hypotheses
+A **Two-Sided Hypothesis Test** was applied  to maintain statistical rigor and conservatively control the error rate.
 
-- **H₀:** The new checkout has no effect on conversion rate (CVR_treatment = CVR_control).
-- **H₁:** The new checkout changes conversion rate (CVR_treatment ≠ CVR_control).
+- **H₀ (Null):** $CVR_{treatment} = CVR_{control}$
+- **H₁ (Alternative):** $CVR_{treatment} \neq CVR_{control}$
 
+**Decision Framework:**
+1. **Significance:** We reject $H_0$ only if $p < 0.05$.
+ 2. **Improvement:** If $H_0$ is rejected, the new design will only be implemented if proven significant and positive.
+3. **Guardrails:** The new one checkout wont be implemented if (AOV) show a statistically significant decline, even if CVR increases.
+   
 ### KPIs
-
 | Metric | Role | Why |
 |---|---|---|
-| Checkout conversion rate | Primary | Directly measures the intervention's effect |
-| Revenue per session | Secondary | Captures both conversion and order-value changes |
-| Average order value | Guardrail | Ensures the change doesn't cannibalise basket size |
+| Checkout conversion rate | Primary | Measures if users cumplete the purchasing process |
+| Revenue per session | Secondary | Captures both conversion and order value changes |
+| Average order value | Guardrail | Ensures avarage order value do not decrease |
 
 ---
 
@@ -31,25 +36,25 @@ A mid-size e-commerce retailer (~3,600 sessions/day) tested a **single-page chec
 
 | Parameter | Value | Rationale |
 |---|---|---|
-| Randomisation unit | User session (cookie) | Standard for web experiments; avoids cross-device leakage |
+| Randomisation unit | User session (cookie) | Standard for web experiments, avoids cross device leakage |
 | Split | 50/50 | Maximises statistical power |
-| Duration | 21 days | Covers 3 full weekly cycles to account for day-of-week effects |
-| MDE | 0.4 pp (~12.5% relative) | Business-meaningful lift; achievable with ~30K sessions/group |
+| Duration | 21 days | Covers 3 full weekly cycles to account for day of week effects |
+| MDE | 0.4 pp (~12.5% relative) | Business meaningful lift, achievable with 30K sessions/group |
 | α | 0.05 (two-sided) | Industry standard |
-| Power | 0.80 | Standard; 21-day run yields >37K per group, exceeding the requirement |
+| Power | 0.80 | Standard: 21day run yields >37K per group, exceeding the requirement |
 
 ### Risks Addressed
 
 - **Sample Ratio Mismatch (SRM):** Chi-squared test confirms balanced assignment (p = 0.017 > 0.01 threshold).
-- **Novelty effect:** Compared first-week vs. last-week conversion rates; treatment lift persists and slightly grows.
+- **Novelty effect:** Compared first week vs last week conversion rates: treatment lift persists and slightly grows.
 - **Multiple comparisons:** Bonferroni correction applied across 3 hypothesis tests.
 - **Peeking:** Analysis run only after the pre-committed 21-day window; no interim looks.
 
 ### Dataset
 
-Synthetic data generated with realistic patterns: day-of-week seasonality, device-mix effects, traffic-source variation, and a fading novelty bump. See `notebooks/01_generate_data.py` for the full generative model and all parameters.
+Synthetic data generated with realistic patterns: day of week seasonality, device mix, traffic source variation, and a fading novelty bump. See `notebooks/01_generate_data.py` for the full generative model and all parameters.
 
-**76,173 sessions** over 21 days (38,416 control / 37,757 treatment).
+**76,173 sessions** over 21 days (38416 control / 37757 treatment).
 
 ---
 
